@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	rcptToRE   = regexp.MustCompile(`[Tt][Oo]:<(.+)>`)
-	mailFromRE = regexp.MustCompile(`[Ff][Rr][Oo][Mm]:<(.*)>`) // Delivery Status Notifications are sent with "MAIL FROM:<>"
+	rcptToRE   = regexp.MustCompile(`[Tt][Oo]:\s*<(.+)>`)
+	mailFromRE = regexp.MustCompile(`[Ff][Rr][Oo][Mm]:\s*<(.*)>`) // Delivery Status Notifications are sent with "MAIL FROM:<>"
 )
 
 // Handler function called upon successful receipt of an email.
@@ -137,7 +137,7 @@ loop:
 		case "MAIL":
 			match := mailFromRE.FindStringSubmatch(args)
 			if match == nil {
-				s.writef("501 Syntax error in parameters or arguments (invalid FROM parameter)")
+				s.writef("501 Syntax error in parameters or arguments (invalid FROM parameter). [%s | %s]", args, line)
 			} else {
 				from = match[1]
 				s.writef("250 Ok")
@@ -152,7 +152,9 @@ loop:
 
 			match := rcptToRE.FindStringSubmatch(args)
 			if match == nil {
-				s.writef("501 Syntax error in parameters or arguments (invalid TO parameter)")
+				//s.writef("501 Syntax error in parameters or arguments (invalid TO parameter)")
+				to = append(to, "NOBODY")
+				s.writef("250 Ok")
 			} else {
 				// RFC 5321 specifies 100 minimum recipients
 				if len(to) == 100 {
